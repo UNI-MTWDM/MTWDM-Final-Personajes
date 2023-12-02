@@ -55,6 +55,8 @@
 		64EA58FE2B1BB8E500A5990C /* MTWDM-Final-Personajes */ = {
 			isa = PBXGroup;
 			children = (
+				80FF79E02B1BBD8300791E41 /* Views */,
+				80FF79DF2B1BBD7D00791E41 /* Models */,
 				64EA58FF2B1BB8E500A5990C /* MTWDM_Final_PersonajesApp.swift */,
 				64EA59012B1BB8E500A5990C /* ContentView.swift */,
 				64EA59032B1BB8E600A5990C /* Assets.xcassets */,
@@ -71,6 +73,20 @@
 				64EA59062B1BB8E600A5990C /* Preview Assets.xcassets */,
 			);
 			path = "Preview Content";
+			sourceTree = "<group>";
+		};
+		80FF79DF2B1BBD7D00791E41 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		80FF79E02B1BBD8300791E41 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Views;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
