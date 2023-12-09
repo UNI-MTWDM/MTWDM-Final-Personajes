@@ -15,7 +15,7 @@ struct CharacterListView : View {
     @Environment(\.managedObjectContext) private var viewContext
     @FetchRequest(sortDescriptors: [NSSortDescriptor(keyPath: \Character.id, ascending: true)], animation: .default)
     private var characters: FetchedResults<Character>
-    
+
     var body: some View {
         NavigationView {
             VStack {
@@ -25,19 +25,19 @@ struct CharacterListView : View {
                         NavigationLink(destination: CharacterDetailView(character: item)) {
                             CharacterCardView(character: item)
                         }
-                        
                     }.onDelete(perform: { indexSet in
                         deleteItems(offsets: indexSet)
                     })
-                }.toolbar{
-                    ToolbarItem(placement: .navigationBarTrailing){
+                }.toolbar {
+                   ToolbarItem(placement: .navigationBarTrailing){
                         EditButton()
                     }
                     ToolbarItem{
                         Button("Add"){
                             isSheetPresented.toggle()
                         }.sheet(isPresented: $isSheetPresented){
-                            
+                            // Modal despliega form para nuevo personaje
+                            NewCharacterView(isSheetPresented: $isSheetPresented)
                         }
                     }
                 }.navigationTitle("Characters")
@@ -104,7 +104,8 @@ struct CharacterCardView: View {
 struct CharacterDetailView: View {
     @State var character: Character
     //@Binding var character: Character
-    @State private var isSheetPresented = false
+    @State var isSheetPresented = false
+    @State private var refreshFlag = false
     //@State var contador : Int
     
     var body: some View {
@@ -160,12 +161,13 @@ struct CharacterDetailView: View {
 
 struct EditCharacterView: View {
     
+    @Environment(\.managedObjectContext) private var viewContext
+    
     @State private var editedCharacter: Character
     @State private var urlString: String = ""
     
     @Binding var character: Character
     @Binding var isSheetPresented: Bool
-    //@ObservedObject var character : Character
     
     init(character: Binding<Character>, isSheetPresented:Binding<Bool>) {
         self._isSheetPresented = isSheetPresented
@@ -227,10 +229,8 @@ struct EditCharacterView: View {
                     Button(action: {
                         //character = editedCharacter
                         
-                        print("\(character.gender ?? "")")
-                        print("\(editedCharacter.gender ?? "")")
-                        
-                        character.status = "bye"
+                        saveChanges()
+                        isSheetPresented = false
                     }){
                         Text("Save changes")
                             .font(.headline)
@@ -249,6 +249,117 @@ struct EditCharacterView: View {
                         isSheetPresented = false
                     }
                 }
+            }
+        }
+    }
+    private func saveChanges() {
+        do {
+            try viewContext.save()
+        } catch {
+            // Handle the error appropriately
+            print("Error saving changes: \(error)")
+        }
+    }
+}
+
+struct NewCharacterView: View {
+    
+    @Environment(\.managedObjectContext) private var viewContext
+    
+    @State private var name: String = ""
+    @State private var status: String = ""
+    @State private var gender: String = ""
+    @State private var image: String = "https://rickandmortyapi.com/api/character/avatar/9.jpeg"
+    @State private var species: String = ""
+    
+    @Binding var isSheetPresented: Bool
+    
+    var body: some View {
+        NavigationView {
+            Form {
+                Section(header: Text("Character Details")) {
+                    
+                    AsyncImage(url: URL(string: image)) { phase in
+                        switch phase {
+                        case .success(let image):
+                            image
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                        case .failure:
+                            Image(systemName: "person.fill")
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                        case .empty:
+                            ProgressView()
+                        @unknown default:
+                            EmptyView()
+                        }
+                    }
+                    .frame(height: 200)
+                    .clipped()
+                    .cornerRadius(10)
+                    
+                    TextField("URL", text: Binding(
+                        get: { image },
+                        set: { image = $0 }
+                    ))
+                    TextField("Name", text: Binding(
+                        get: { name },
+                        set: { name = $0 }
+                    ))
+                    TextField("Status", text: Binding(
+                        get: { status },
+                        set: { status = $0 }
+                    ))
+                    TextField("Species", text: Binding(
+                        get: { species },
+                        set: { species = $0 }
+                    ))
+                    TextField("Gender", text: Binding(
+                        get: { gender },
+                        set: { gender = $0 }
+                    ))
+                }
+                Section {
+                    Button(action: {
+                        addCharacter()
+                        isSheetPresented = false
+                    }){
+                        Text("Save changes")
+                            .font(.headline)
+                            .foregroundColor(.white)
+                            .padding()
+                            .frame(maxWidth: .infinity)
+                            .background(Color.blue)
+                            .cornerRadius(10)
+                    }
+                }
+            }
+            .navigationTitle("New Character")
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Cancel") {
+                        isSheetPresented = false
+                    }
+                }
+            }
+        }
+    }
+    private func addCharacter() {
+        withAnimation {
+            let personaje = Character(context: viewContext)
+            personaje.id = UUID()
+            personaje.name = name
+            personaje.status = status
+            personaje.species = species
+            personaje.gender = gender
+            personaje.image = image
+
+            do {
+                try viewContext.save()
+            } catch {
+                let nsError = error as NSError
+                fatalError("Unresolved error \(nsError), \(nsError.userInfo)")
             }
         }
     }
