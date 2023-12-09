@@ -65,6 +65,18 @@ struct CharacterListView : View {
 //Row view
 struct CharacterCardView: View {
     let character: Character
+
+    @State private var name: String?
+    @State private var gender: String?
+    @State private var image: String?
+
+    init(character: Character) {
+        self.character = character
+        
+        self._name = State(initialValue: character.name)
+        self._gender = State(initialValue: character.gender)
+        self._image = State(initialValue: character.image)
+    }
     
     var body: some View {
         HStack {
@@ -92,8 +104,8 @@ struct CharacterCardView: View {
                 }
             }
             VStack(alignment: .leading) {
-                Text(character.name ?? "")
-                    .font(.headline)
+                Text("\(character.name ?? "")")
+                    .font(.subheadline)
                 Text("Gender: \(character.gender ?? "")")
                     .font(.subheadline)
             }
