@@ -22,7 +22,9 @@ struct CharacterListView : View {
                 List{
                     ForEach(characters) { item in
                         //item -> $0 ||
-                        NavigationLink(destination: CharacterDetailView(character: item)) {
+                        NavigationLink(destination: 
+                                        CharacterDetailView(id: item.id, name: item.name, gender: item.gender, status: item.status, species: item.species, image: item.image, character: item)
+                        ) {
                             CharacterCardView(character: item)
                         }
                     }.onDelete(perform: { indexSet in
@@ -103,11 +105,34 @@ struct CharacterCardView: View {
 //Detail view
 struct CharacterDetailView: View {
     @State var character: Character
-    //@Binding var character: Character
     @State var isSheetPresented = false
-    @State private var refreshFlag = false
-    //@State var contador : Int
     
+    @State private var id: UUID?
+    @State private var name: String?
+    @State private var gender: String?
+    @State private var status: String?
+    @State private var species: String?
+    @State private var image: String?
+
+    init(
+        id: UUID?,
+        name: String?,
+        gender: String?,
+        status: String?,
+        species: String?,
+        image: String?,
+          character: Character)
+    {
+        self._character = State(initialValue: character)
+        self.isSheetPresented = false
+        
+        self._id = State(initialValue: id)
+        self._name = State(initialValue: name)
+        self._gender = State(initialValue: gender)
+        self._status = State(initialValue: status)
+        self._species = State(initialValue: species)
+        self._image = State(initialValue: image)
+    }
     var body: some View {
         VStack(alignment: .leading) {
             
@@ -133,6 +158,11 @@ struct CharacterDetailView: View {
                 .cornerRadius(10)
             }
             VStack(alignment: .leading, spacing: 10) {
+                Text("Name: \(name ?? "")")
+                    .font(.subheadline)
+                Text("Genero: \(gender ?? "")")
+                    .font(.subheadline)
+                
                 Text("Status: \(character.status ?? "")")
                     .font(.subheadline)
                 Text("Species: \(character.species ?? "")")
@@ -152,7 +182,8 @@ struct CharacterDetailView: View {
                 }
                 .sheet(isPresented: $isSheetPresented) {
                     // Modal despliega form para edición
-                    EditCharacterView(character: $character, isSheetPresented: $isSheetPresented)
+                    EditCharacterView(id: $id, name: $name, gender: $gender, status: $status, species: $species, image: $image,
+                                      personaje: $character, isSheetPresented: $isSheetPresented)
                 }
             }
         }//toolbar
@@ -163,20 +194,32 @@ struct EditCharacterView: View {
     
     @Environment(\.managedObjectContext) private var viewContext
     
-    @State private var editedCharacter: Character
-    @State private var urlString: String = ""
+    @Binding var id: UUID?
+    @Binding var name: String?
+    @Binding var gender: String?
+    @Binding var status: String?
+    @Binding var species: String?
+    @Binding var image: String?
     
-    @Binding var character: Character
     @Binding var isSheetPresented: Bool
+    @Binding var personaje : Character
     
-    init(character: Binding<Character>, isSheetPresented:Binding<Bool>) {
-        self._isSheetPresented = isSheetPresented
-        self._character = character
-        self._editedCharacter = State(initialValue: character.wrappedValue)
+    init(id: Binding<UUID?>,
+         name : Binding<String?>,
+         gender: Binding<String?>,
+         status: Binding<String?>,
+         species: Binding<String?>,
+         image: Binding<String?>, personaje : Binding<Character>, isSheetPresented:Binding<Bool>) {
         
-        if let url = editedCharacter.image {
-            self._urlString = State(initialValue: url)
-        }
+        self._personaje = personaje
+        self._isSheetPresented = isSheetPresented
+        
+        self._id = id
+        self._name = name
+        self._gender = gender
+        self._status = status
+        self._species = species
+        self._image = image
     }
     
     var body: some View {
@@ -184,45 +227,46 @@ struct EditCharacterView: View {
             Form {
                 Section(header: Text("Character Details")) {
                     
-                    AsyncImage(url: URL(string: urlString)) { phase in
-                        switch phase {
-                        case .success(let image):
-                            image
-                                .resizable()
-                                .aspectRatio(contentMode: .fit)
-                        case .failure:
-                            Image(systemName: "person.fill")
-                                .resizable()
-                                .aspectRatio(contentMode: .fit)
-                        case .empty:
-                            ProgressView()
-                        @unknown default:
-                            EmptyView()
+                    if let url = image {
+                        AsyncImage(url: URL(string: url)) { phase in
+                            switch phase {
+                            case .success(let image):
+                                image
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fit)
+                            case .failure:
+                                Image(systemName: "person.fill")
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fit)
+                            case .empty:
+                                ProgressView()
+                            @unknown default:
+                                EmptyView()
+                            }
                         }
+                        .frame(height: 200)
+                        .clipped()
+                        .cornerRadius(10)
                     }
-                    .frame(height: 200)
-                    .clipped()
-                    .cornerRadius(10)
-                    
                     TextField("URL", text: Binding(
-                        get: { urlString },
-                        set: { urlString = $0 }
+                        get: { image ?? "" },
+                        set: { image = $0 }
                     ))
                     TextField("Name", text: Binding(
-                        get: { editedCharacter.name ?? "" },
-                        set: { editedCharacter.name = $0 }
+                        get: { name ?? "" },
+                        set: { name = $0 }
                     ))
                     TextField("Status", text: Binding(
-                        get: { editedCharacter.status ?? "" },
-                        set: { editedCharacter.status = $0 }
+                        get: { status ?? "" },
+                        set: { status = $0 }
                     ))
                     TextField("Species", text: Binding(
-                        get: { editedCharacter.species ?? "" },
-                        set: { editedCharacter.species = $0 }
+                        get: { species ?? "" },
+                        set: { species = $0 }
                     ))
                     TextField("Gender", text: Binding(
-                        get: { editedCharacter.gender ?? "" },
-                        set: { editedCharacter.gender = $0 }
+                        get: { gender ?? "" },
+                        set: { gender = $0 }
                     ))
                 }
                 Section {
@@ -254,6 +298,12 @@ struct EditCharacterView: View {
     }
     private func saveChanges() {
         do {
+            personaje.name = name
+            personaje.status = status
+            personaje.gender = gender
+            personaje.species = species
+            personaje.image = image
+            
             try viewContext.save()
         } catch {
             // Handle the error appropriately
